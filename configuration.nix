@@ -50,9 +50,9 @@
   time.timeZone = "America/Sao_Paulo"; # <-- ajuste se necessário
 
   i18n.defaultLocale = "en_US.UTF-8";
-  
+
   #LOCALES OPCIONAIS!
-  
+
   #i18n.extraLocaleSettings = {
     #LC_ADDRESS = "pt_BR.UTF-8";
     #LC_IDENTIFICATION = "pt_BR.UTF-8";
@@ -219,13 +219,14 @@
 
     # --- terminal ---
     kitty # terminal rápido, funciona bem com Wayland e Nvidia
+    pkgs.fastfetch
 
     # --- gaming (seção 8) ---
     mangohud # overlay de FPS/temperatura/uso de GPU nos jogos
     protonup-qt # gerenciador gráfico de versões do Proton-GE
     lutris # launcher pra jogos fora da Steam (Epic, GOG, emuladores, etc)
     heroic # launcher pra Epic Games / GOG nativo no Linux
-    wineWowPackages.stable # Wine, caso precise rodar algo fora do Steam
+    wineWow64Packages.stable # Wine, caso precise rodar algo fora do Steam
     winetricks
     discord # comunicação enquanto joga
 
@@ -248,13 +249,23 @@
 
     # --- servidor SRCDS (seção 11) ---
     steamcmd
+    # ---- Privacidade e afins ------
+    pkgs.signal-desktop
+    pkgs.kdePackages.kleopatra
+    pkgs.i2p
+    pkgs.tor-browser
+    pkgs.proton-vpn
+    #browsers
+    pkgs.brave
+
   ];
 
   # Fontes (importante pra jogos/dev que usam ícones, ligatures, etc).
   fonts.packages = with pkgs; [
     noto-fonts
-    noto-fonts-emoji
-    (nerdfonts.override { fonts = [ "JetBrainsMono" "FiraCode" ]; })
+    noto-fonts-color-emoji
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.fira-code
   ];
 
   # ==========================================================================
@@ -274,6 +285,9 @@
 
   # Os pacotes de gaming (MangoHud, Lutris, Heroic, Wine, Discord...) ficam
   # todos juntos na lista única da seção 7, no bloco "--- gaming ---".
+
+  #Binary RUNNING - CRUTIAL
+  programs.nix-ld.enable = true;
 
   # ==========================================================================
   # 9. DESENVOLVIMENTO
@@ -331,11 +345,11 @@
   # Descomente as portas dos jogos que você realmente vai hospedar.
   networking.firewall = {
     allowedUDPPorts = [
-      # 27015 # CS2 / CS:GO / TF2 / GMod (porta padrão de jogo)
-      # 27020 # voz STV / SourceTV
+       27015 # CS2 / CS:GO / TF2 / GMod (porta padrão de jogo)
+       27020 # voz STV / SourceTV
     ];
     allowedTCPPorts = [
-      # 27015 # RCON / consulta de servidor
+       27015 # RCON / consulta de servidor
     ];
   };
 
@@ -360,7 +374,7 @@
 
     serviceConfig = {
       Type = "simple";
-      User = "SEU_USUARIO"; # <-- TROQUE pelo seu usuário (mesmo da seção 6)
+      User = "nap"; # <-- TROQUE pelo seu usuário (mesmo da seção 6)
       WorkingDirectory = "/srv/srcds/cs2";
 
       # Ajuste o comando conforme a documentação do jogo. Exemplo para CS2:
@@ -409,5 +423,5 @@
   # Mantenha a mesma versão do "state" que você tinha na instalação original
   # do NixOS. NÃO mude este valor depois de instalado — ele só existe pra
   # evitar problemas de migração de dados entre versões do NixOS.
-  system.stateVersion = "24.11"; # <-- mantenha igual ao que o instalador gerou
+  system.stateVersion = "26.05"; # <-- mantenha igual ao que o instalador gerou
 }
