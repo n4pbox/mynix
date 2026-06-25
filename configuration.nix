@@ -28,6 +28,34 @@
 
 { config, pkgs, lib, ... }:
 
+let
+  # ──────────────────────────────────────────────────────────────────────────
+  # UNSTABLE — Direct Import via builtins.fetchTarball (sem flakes)
+  #
+  # Como usar em environment.systemPackages:
+  #   unstable.nomeDoPackage   → pega a versão do nixpkgs-unstable
+  #   pkgs.nomeDoPackage       → continua pegando a versão stable (normal)
+  #
+  # Exemplo:
+  #   environment.systemPackages = with pkgs; [
+  #     git                   # stable
+  #     unstable.helix        # unstable
+  #   ];
+  #
+  # NOTA: sem `sha256` o Nix baixa sempre o HEAD do nixos-unstable a cada
+  # rebuild (impuro, mas prático). Para fixar um snapshot e ganhar cache:
+  #   1. Ache o commit: git ls-remote https://github.com/NixOS/nixpkgs nixos-unstable
+  #   2. Monte a URL:   https://github.com/NixOS/nixpkgs/archive/<COMMIT>.tar.gz
+  #   3. Gere o hash:   nix-prefetch-url --unpack <URL>
+  #   4. Adicione:      sha256 = "<HASH>";
+  # ──────────────────────────────────────────────────────────────────────────
+  unstable = import (builtins.fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz";
+  }) {
+    config = config.nixpkgs.config; # herda allowUnfree = true e demais opções
+  };
+in
+
 {
   imports = [
     ./hardware-configuration.nix # gerado automaticamente pelo instalador, não mexa
@@ -80,6 +108,9 @@
   # na seção 11 — o Nix mescla automaticamente as duas declarações de
   # "networking.firewall", então não há conflito, só separação por contexto.
   networking.firewall.enable = true;
+
+  #I2P
+  services.i2p.enable = true;
 
   # ==========================================================================
   # 3. NVIDIA — driver proprietário
@@ -134,17 +165,19 @@
   # --- OPÇÃO ALTERNATIVA: Hyprland -------------------------------------
   # Para trocar: comente o bloco do KDE acima e descomente abaixo.
   #
-  # programs.hyprland.enable = true;
+  programs.hyprland = {
+    enable  = true;
+    withUWSM = true;
+    xwayland.enable = true;
+  };
   # services.displayManager.sddm.enable = true; # ou greetd, à sua escolha
   #
   # # Hyprland precisa dessas variáveis de ambiente pra rodar bem com Nvidia:
-  # environment.sessionVariables = {
-  #   LIBVA_DRIVER_NAME = "nvidia";
-  #   XDG_SESSION_TYPE = "wayland";
-  #   GBM_BACKEND = "nvidia-drm";
-  #   __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-  #   WLR_NO_HARDWARE_CURSORS = "1";
-  # };
+  environment.sessionVariables = {
+    LIBVA_DRIVER_NAME = "nvidia";
+    XDG_SESSION_TYPE = "wayland";
+    __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+  };
   # -----------------------------------------------------------------------
 
   # --- OPÇÃO ALTERNATIVA: i3wm (X11) -------------------------------------
@@ -249,17 +282,40 @@
 
     # --- servidor SRCDS (seção 11) ---
     steamcmd
+    pkgs.vmware-workstation
+    pkgs.filezilla
     # ---- Privacidade e afins ------
     pkgs.signal-desktop
     pkgs.kdePackages.kleopatra
     pkgs.i2p
     pkgs.tor-browser
-    pkgs.proton-vpn
+    unstable.proton-vpn
     #browsers
     pkgs.brave
-
+    pkgs.firefox-bin
+    #games
+    pkgs.xonotic
+    pkgs.r2modman
+    #media
+    pkgs.yt-dlp
+    pkgs.ffmpeg-full
+    pkgs.obs-studio
+    pkgs.qbittorrent-enhanced
+    #hyprland
+    alsa-utils
+    wofi
+    waybar
+    mako
+    hyprpaper
+    wl-clipboard
+    brightnessctl
+    nixos-artwork.wallpapers.nineish-dark-gray
+    kdePackages.polkit-kde-agent-1
+    grim
+    slurp
   ];
 
+  security.polkit.enable = true;
   # Fontes (importante pra jogos/dev que usam ícones, ligatures, etc).
   fonts.packages = with pkgs; [
     noto-fonts
@@ -296,6 +352,9 @@
   # todos juntos na lista única da seção 7, no bloco "--- desenvolvimento ---".
 
   # Docker — conforme você pediu.
+
+  virtualisation.vmware.host.enable = true;
+
   virtualisation.docker = {
     enable = true;
     enableOnBoot = true;
@@ -346,10 +405,12 @@
   networking.firewall = {
     allowedUDPPorts = [
        27015 # CS2 / CS:GO / TF2 / GMod (porta padrão de jogo)
-       27020 # voz STV / SourceTV
+       27020
+       9999  # voz STV / SourceTV
     ];
     allowedTCPPorts = [
        27015 # RCON / consulta de servidor
+       9999
     ];
   };
 
